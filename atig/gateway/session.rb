@@ -140,7 +140,7 @@ END
         log :debug, "initialize Twitter"
         twitter = Twitter.new   context, oauth.access
         search  = SearchTwitter.new context
-        stream  = Stream.new context, oauth.oauth, oauth.access if @opts.stream
+        stream  = Stream.new context, oauth.oauth, oauth.access, @channels if @opts.stream
         @api    = Scheduler.new context, twitter, search, stream
 
         log :debug, "initialize filter"
