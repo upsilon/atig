@@ -13,11 +13,12 @@ module Atig
     include Util
 
     class APIFailed < StandardError; end
-    def initialize(context, consumer, access)
+    def initialize(context, consumer, access, channels)
       @log      = context.log
       @opts     = context.opts
       @consumer = consumer
       @access   = access
+      @channels = channels
     end
 
     def watch(path, query={}, &f)
@@ -44,8 +45,34 @@ module Atig
           response.read_body do |str|
             buf << str
             buf.gsub!(/[\s\S]+?\r\n/) do |chunk|
+              channel = @channels.key?('#twitter') ? @channels['#twitter'] : nil
               data = JSON.parse(chunk) rescue {}
-              f.call TwitterStruct.make( data )
+              if data['user']
+                source = data['user']['screen_name']
+              elsif data['source']
+                source = data['source']['screen_name']
+              elsif data['target_object']
+                source = data['target_object']['user']['screen_name']
+              end
+
+              case
+              when data['text']
+                f.call TwitterStruct.make( data )
+              when data['event'] == 'favorite'
+                if channel
+                  channel.notify "%s \00311favorites\017 => @%s : %s [ http://twitter.com/%s ]" % [ source,
+                    data['target_object']['user']['screen_name'],
+                    data['target_object']['text'],
+                    data['target_object']['user']['screen_name'] ]
+                end
+              when data['event'] == 'unfavorite'
+                if channel
+                  channel.notify "%s \00305unfavorites\017 => @%s : %s [ http://twitter.com/%s ]" % [ source,
+                      data['target_object']['user']['screen_name'],
+                      data['target_object']['text'],
+                      data['target_object']['user']['screen_name'] ]
+                 end
+              end # case
             end
             buf = ''
           end
