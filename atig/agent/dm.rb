@@ -12,6 +12,8 @@ module Atig
         @api = api
         @prev = nil
 
+        return if context.opts.stream
+
         log :info, "initialize"
 
         @api.repeat(600) do|t|
