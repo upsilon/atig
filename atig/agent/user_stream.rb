@@ -16,8 +16,13 @@ module Atig
 
         log :info, "initialize"
 
+        query = {}
+        if context.opts.replies then
+          query[:replies] = 'all'
+        end
+
         @api.stream do|t|
-          t.watch('user') do |status|
+          t.watch('user', query) do |status|
 #            @log.debug status.inspect
             if status and status.user
               db.statuses.transaction do|d|

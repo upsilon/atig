@@ -41,7 +41,7 @@ module Atig
         db.statuses.listen do|entry|
           if db.followings.include?(entry.user) or
               entry.source == :timeline or
-              entry.source == :user_stream or
+              (entry.source == :user_stream and context.opts.replies == 'all') or
               entry.source == :me then
             @channel.message entry
           end
